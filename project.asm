@@ -4,6 +4,7 @@ INCLUDE Irvine32.inc
 main PROC
 
 mov eax, 5
+mov ebx, 10
 call dumpregs
 
 exit
