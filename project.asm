@@ -1,12 +1,35 @@
-INCLUDE Irvine32.inc
+include Irvine32.inc
 
-.code
-main PROC
+.data
+	hours DWORD 0
+	minutes DWORD 0
+	seconds DWORD 0
+	centisec DWORD 0
 
-mov eax, 5
-mov ebx, 10
-call dumpregs
+	MAX_LAPS = 10
+	lapTimes DWORD MAX_LAPS DUP(?)
+	lapHours DWORD MAX_LAPS DUP(?)
+	lapMinutes DWORD MAX_LAPS DUP(?)
+	lapSeconds DWORD MAX_LAPS DUP(?)
+	lapCenti DWORD MAX_LAPS DUP(?)
 
-exit
-main ENDP
-END main
+	titleMsg BYTE "DIGITAL STOPWATCH", 0dh, 0ah
+			 BYTE "=================", 0dh, 0ah, 0
+
+	menuMsg BYTE "Control Options:", 0dh, 0ah
+			BYTE "[S] Start/Stop", 0dh, 0ah
+			BYTE "[R] Reset", 0dh, 0ah
+			BYTE "[L] Lap Record (Max 10)", 0dh, 0ah
+			BYTE "[V] View LAps", 0dh, 0ah
+			BYTE "[Q] Quit", 0dh, 0ah, 0
+
+	timeMsg BYTE "Time:      ", 0
+
+	lapRecordedMsg BYTE "Lap Recorded!", 0dh, 0ah, 0
+	clearStr BYTE "             ", 0dh, 0ah, 0
+
+	lapMsg BYTE "Lap # ", 0
+
+	colonStr BYTE ":", 0
+	pressKeyMsg BYTE "Press any key to return...", 0
+
