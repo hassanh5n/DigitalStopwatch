@@ -33,3 +33,33 @@ include Irvine32.inc
 	colonStr BYTE ":", 0
 	pressKeyMsg BYTE "Press any key to return...", 0
 
+.code
+main proc
+call clrscr
+
+;displaying menu
+mov edx,offset titleMsg
+call writestring
+
+mov edx,offset menuMsg
+call writestring 
+call crlf
+
+mloop
+call readkey
+jz checktimer ;if no key pressed 
+
+cmp al,'s'
+je toggletimer
+
+cmp al,'r'
+je resettimer
+
+cmp al,'l'
+je recordlap
+
+cmp al,'v'
+je viewlaps
+
+cmp al,'q'
+je exitprog
