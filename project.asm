@@ -33,6 +33,9 @@ include Irvine32.inc
 	colonStr BYTE ":", 0
 	pressKeyMsg BYTE "Press any key to return...", 0
 
+	isrunning byte 0
+	lasttick dword 0
+
 .code
 main proc
 call clrscr
@@ -46,6 +49,9 @@ call writestring
 call crlf
 
 mloop
+mov eax,10
+call delay
+
 call readkey
 jz checktimer ;if no key pressed 
 
@@ -63,3 +69,48 @@ je viewlaps
 
 cmp al,'q'
 je exitprog
+
+checktimer:
+cmp isrunning,0
+je mloop
+
+invoke gettickcount
+mov ebx,eax
+sub eax,lasttick
+cmp eax,10
+jl mloop
+
+mov lasttick,ebx
+
+inc centisec
+cmp centisec,100
+je displaytime
+
+mov centisec,0
+inc seconds
+cmp seconds,60
+jne displaytime
+
+mov second,0
+inc minutes
+cmp minutes,60
+jne displaytime
+
+mov minutes,0
+inc hours
+
+displaytime:
+mov dh,8
+mov dl,0
+call gotoxy
+
+mov edx,offset timemsg
+call writestring
+call displaycurrenttime
+
+jmp mloop
+
+
+
+
+
