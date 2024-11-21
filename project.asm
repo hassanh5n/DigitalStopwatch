@@ -88,4 +88,102 @@ main proc
 	call writestring
 	call displaycurrenttime
 jmp mloop
+recordlap:
+    ; Check if we can store more laps
+    mov eax, currentLap
+    cmp eax, MAX_LAPS
+    jge mainLoop     ; Skip if maximum laps reached
+
+    ; Store current time values in lap arrays
+    mov ebx, currentLap
+    mov eax, hours
+    mov lapHours[ebx * 4], eax
+    mov eax, minutes
+    mov lapMinutes[ebx * 4], eax
+    mov eax, seconds
+    mov lapSeconds[ebx * 4], eax
+    mov eax, centisec
+    mov lapCenti[ebx * 4], eax
+
+    ; Increment lap counter
+    inc currentLap
+
+    ; Display lap recorded message
+    mov dh, 10        ; Row
+    mov dl, 20        ; Column
+    call Gotoxy
+    mov edx, OFFSET lapRecordedMsg
+    call WriteString
+
+    ; Delay for 2 seconds
+    mov ecx, 10     ; 200 * 10ms = 2 seconds
+delayloop:
+    mov eax, 10       ; Delay for 10ms
+    call Delay
+    loop delayloop
+
+    ; Clear the lap recorded message
+    mov dh, 10        ; Row
+    mov dl, 20        ; Column
+    call Gotoxy
+    mov edx, OFFSET clearStr
+    call WriteString
+
+    jmp mainLoop
+
+viewlaps:
+    call DisplayLaps
+    jmp mainLoop
+
+toggletimer:
+    xor isRunning, 1    ; Toggle running state
+    jmp mainLoop
+
+resettimer:
+    mov hours, 0
+    mov minutes, 0
+    mov seconds, 0
+    mov centisec, 0
+    mov currentLap, 0   ; Reset lap counter
+    jmp mainLoop
+
+displaycurrenttime PROC
+    ; Display hours
+    mov eax, hours
+    call WriteDec
+    mov edx, OFFSET colonStr
+    call WriteString
+
+    ; Display minutes
+    mov eax, minutes
+    .IF eax < 10
+        mov al, '0'
+        call WriteChar
+    .ENDIF
+    mov eax, minutes
+    call WriteDec
+    mov edx, OFFSET colonStr
+    call WriteString
+
+    ; Display seconds
+    mov eax, seconds
+    .IF eax < 10
+        mov al, '0'
+        call WriteChar
+    .ENDIF
+    mov eax, seconds
+    call WriteDec
+    mov edx, OFFSET colonStr
+    call WriteString
+
+    ; Display centiseconds
+    mov eax, centisec
+    .IF eax < 10
+        mov al, '0'
+        call WriteChar
+    .ENDIF
+    mov eax, centisec
+    call WriteDec
+    ret
+displaycurrenttime ENDP
 
