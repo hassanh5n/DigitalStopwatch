@@ -187,3 +187,93 @@ displaycurrenttime PROC
     ret
 displaycurrenttime ENDP
 
+displaylaps PROC:
+call clrscr
+mov eax,currentlap
+cmp eax,0
+je nolaps
+
+mov ecx,0
+displaylaploop:
+cmp ecx,currentlap
+jge enddispalylaps
+
+mov edx,offset lapmsg
+call writestring
+mov eax,ecx
+inc eax
+call writedec
+mov al,':'
+call writechar
+mov al,' '
+call writechar
+
+push ecx
+mov ebx,ecx
+mov eax,laphours[ebx*4]
+call writedec
+mov edx,offset colonstr
+call writestring
+
+mov eax,lapminutes[ebx*4]
+.if eax < 10
+    mov al,'0'
+    call writechar
+.endif
+    mov eax,lapminutes[ebx*4]
+    call writedec
+    mov edx,offset colonstr
+    call writestring
+
+mov eax,lapseconds[ebx*4]
+.if eax<10
+    mov al,'0'
+    call writechar
+.endif
+    mov eax,lapseconds[ebx*4]
+    call writedec
+    call edx,offset colonstr
+    call writestring
+
+mov eax,lapcenti[ebx*4]
+.if eax<10
+    mov al,'0'
+    call writechar
+.endif
+    mov eax,lapcenti[ebx*4]
+    call writedec
+
+call crlf
+pop ecx
+inc ecx
+jmp displaylaploop
+
+nolaps:
+mov  edx,offset nolapsmsg
+call writestring
+call crlf
+
+enddisplaylaps:
+mov edx,offset presskeymsg
+call writestring
+call writechar
+
+call clrscr
+mov edx,offset titlemsg
+call writestring
+mov edx,offset menumsg
+call writestring
+call crlf
+ret
+
+nolapsmsg byte "no laps recorded yet",0
+dispalylaps endp
+
+exitprog:
+exit
+
+main endp
+ end main
+
+
+
