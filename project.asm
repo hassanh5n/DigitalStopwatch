@@ -12,6 +12,7 @@ include Irvine32.inc
 	lapMinutes DWORD MAX_LAPS DUP(?)
 	lapSeconds DWORD MAX_LAPS DUP(?)
 	lapCenti DWORD MAX_LAPS DUP(?)
+    currentLap DWORD 0
 
 	titleMsg BYTE "DIGITAL STOPWATCH", 0dh, 0ah
 			 BYTE "=================", 0dh, 0ah, 0
@@ -43,7 +44,7 @@ main proc
 	mov edx,offset menuMsg
 	call writestring 
 	call crlf
-	mloop
+	mainloop:
 	mov eax,10
 	call delay
 	call readkey
@@ -60,12 +61,12 @@ main proc
 	je exitprog
 	checktimer:
 	cmp isrunning,0
-	je mloop
+	je mainloop
 	invoke gettickcount
 	mov ebx,eax
 	sub eax,lasttick
 	cmp eax,10
-	jl mloop
+	jl mainloop
 	mov lasttick,ebx
 	inc centisec
 	cmp centisec,100
@@ -74,7 +75,7 @@ main proc
 	inc seconds
 	cmp seconds,60
 	jne displaytime
-	mov second,0
+	mov seconds,0
 	inc minutes
 	cmp minutes,60
 	jne displaytime
@@ -87,7 +88,7 @@ main proc
 	mov edx,offset timemsg
 	call writestring
 	call displaycurrenttime
-jmp mloop
+jmp mainloop
 recordlap:
     ; Check if we can store more laps
     mov eax, currentLap
@@ -187,7 +188,7 @@ displaycurrenttime PROC
     ret
 displaycurrenttime ENDP
 
-displaylaps PROC:
+displaylaps PROC
 call clrscr
 mov eax,currentlap
 cmp eax,0
@@ -196,7 +197,7 @@ je nolaps
 mov ecx,0
 displaylaploop:
 cmp ecx,currentlap
-jge enddispalylaps
+jge enddisplaylaps
 
 mov edx,offset lapmsg
 call writestring
@@ -232,7 +233,7 @@ mov eax,lapseconds[ebx*4]
 .endif
     mov eax,lapseconds[ebx*4]
     call writedec
-    call edx,offset colonstr
+    mov edx,offset colonstr
     call writestring
 
 mov eax,lapcenti[ebx*4]
@@ -267,7 +268,7 @@ call crlf
 ret
 
 nolapsmsg byte "no laps recorded yet",0
-dispalylaps endp
+displaylaps endp
 
 exitprog:
 exit
