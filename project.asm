@@ -41,9 +41,14 @@ main proc
 	;displaying menu
 	mov edx,offset titleMsg
 	call writestring
+
 	mov edx,offset menuMsg
 	call writestring 
 	call crlf
+
+    INVOKE GetTickCount
+    mov lasttick, eax
+
 	mainloop:
 	mov eax,10
 	call delay
@@ -59,8 +64,9 @@ main proc
 	je viewlaps
 	cmp al,'q'
 	je exitprog
-	checktimer:
-	cmp isrunning,0
+
+checktimer:
+    cmp isrunning,0
 	je mainloop
 	invoke gettickcount
 	mov ebx,eax
@@ -68,27 +74,35 @@ main proc
 	cmp eax,10
 	jl mainloop
 	mov lasttick,ebx
+
 	inc centisec
 	cmp centisec,100
-	je displaytime
+	jl displaytime
+
 	mov centisec,0
 	inc seconds
 	cmp seconds,60
 	jne displaytime
+
 	mov seconds,0
 	inc minutes
 	cmp minutes,60
 	jne displaytime
+
 	mov minutes,0
 	inc hours
-	displaytime:
+
+displaytime:
 	mov dh,8
 	mov dl,0
 	call gotoxy
+    call crlf
+    call crlf
 	mov edx,offset timemsg
 	call writestring
 	call displaycurrenttime
-jmp mainloop
+    jmp mainloop
+
 recordlap:
     ; Check if we can store more laps
     mov eax, currentLap
@@ -189,92 +203,92 @@ displaycurrenttime PROC
 displaycurrenttime ENDP
 
 displaylaps PROC
-call clrscr
-mov eax,currentlap
-cmp eax,0
-je nolaps
+    call clrscr
+    mov eax,currentlap
+    cmp eax,0
+    je nolaps
 
-mov ecx,0
-displaylaploop:
-cmp ecx,currentlap
-jge enddisplaylaps
+    mov ecx,0
+    displaylaploop:
+    cmp ecx,currentlap
+    jge enddisplaylaps
 
-mov edx,offset lapmsg
-call writestring
-mov eax,ecx
-inc eax
-call writedec
-mov al,':'
-call writechar
-mov al,' '
-call writechar
-
-push ecx
-mov ebx,ecx
-mov eax,laphours[ebx*4]
-call writedec
-mov edx,offset colonstr
-call writestring
-
-mov eax,lapminutes[ebx*4]
-.if eax < 10
-    mov al,'0'
+    mov edx,offset lapmsg
+    call writestring
+    mov eax,ecx
+    inc eax
+    call writedec
+    mov al,':'
     call writechar
-.endif
+    mov al,' '
+    call writechar
+
+    push ecx
+    mov ebx,ecx
+    mov eax,laphours[ebx*4]
+    call writedec
+    mov edx,offset colonstr
+    call writestring
+
     mov eax,lapminutes[ebx*4]
-    call writedec
-    mov edx,offset colonstr
-    call writestring
+    .if eax < 10
+        mov al,'0'
+        call writechar
+    .endif
+        mov eax,lapminutes[ebx*4]
+        call writedec
+        mov edx,offset colonstr
+        call writestring
 
-mov eax,lapseconds[ebx*4]
-.if eax<10
-    mov al,'0'
-    call writechar
-.endif
     mov eax,lapseconds[ebx*4]
-    call writedec
-    mov edx,offset colonstr
-    call writestring
+    .if eax<10
+        mov al,'0'
+        call writechar
+    .endif
+        mov eax,lapseconds[ebx*4]
+        call writedec
+        mov edx,offset colonstr
+        call writestring
 
-mov eax,lapcenti[ebx*4]
-.if eax<10
-    mov al,'0'
-    call writechar
-.endif
     mov eax,lapcenti[ebx*4]
-    call writedec
+    .if eax<10
+        mov al,'0'
+        call writechar
+    .endif
+        mov eax,lapcenti[ebx*4]
+        call writedec
 
-call crlf
-pop ecx
-inc ecx
-jmp displaylaploop
+    call crlf
+    pop ecx
+    inc ecx
+    jmp displaylaploop
 
-nolaps:
-mov  edx,offset nolapsmsg
-call writestring
-call crlf
+    nolaps:
+    mov  edx,offset nolapsmsg
+    call writestring
+    call crlf
 
-enddisplaylaps:
-mov edx,offset presskeymsg
-call writestring
-call writechar
+    enddisplaylaps:
+    mov edx,offset presskeymsg
+    call writestring
+    call Readchar
 
-call clrscr
-mov edx,offset titlemsg
-call writestring
-mov edx,offset menumsg
-call writestring
-call crlf
-ret
+    call clrscr
+    mov edx,offset titlemsg
+    call writestring
+    mov edx,offset menumsg
+    call writestring
+    call crlf
+    ret
 
-nolapsmsg byte "no laps recorded yet",0
+    nolapsmsg byte "no laps recorded yet",0
 displaylaps endp
 
 exitprog:
 exit
 
 main endp
- end main
+end main
 
 
 
