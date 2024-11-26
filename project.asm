@@ -1,10 +1,23 @@
 include Irvine32.inc
+includelib win32.inc
+includelib kernal32.lib
+
+QueryPerformanceCounter PROTO,
+    lpPerformanceCounter:PTR QWORD
+
+QueryPerformanceFrequency PROTO,
+    lpFrequency:PTR QWORD
+
 
 .data
 	hours DWORD 0
 	minutes DWORD 0
 	seconds DWORD 0
 	centisec DWORD 0
+
+    perfCount QWORD ?
+    lastCount QWORD ?
+    perfFreq QWORD ?
 
 	MAX_LAPS = 10
 	lapTimes DWORD MAX_LAPS DUP(?)
@@ -34,10 +47,15 @@ include Irvine32.inc
 	colonStr BYTE ":", 0
 	pressKeyMsg BYTE "Press any key to return...", 0
 	isrunning byte 0
-	lasttick dword 0
+
 .code
 main proc
+
+    INVOKE QueryPerformanceFrequency, ADDR perfFreq
+    INVOKE QueryPerformanceCounter, ADDR lastCount
+
 	call clrscr
+
 	;displaying menu
 	mov edx,offset titleMsg
 	call writestring
@@ -46,14 +64,11 @@ main proc
 	call writestring 
 	call crlf
 
-    INVOKE GetTickCount
-    mov lasttick, eax
+mainloop:
 
-	mainloop:
-	mov eax,10
-	call delay
-	call readkey
+	call readKey
 	jz checktimer ;if no key pressed 
+
 	cmp al,'s'
 	je toggletimer
 	cmp al,'r'
@@ -68,12 +83,25 @@ main proc
 checktimer:
     cmp isrunning,0
 	je mainloop
-	invoke gettickcount
-	mov ebx,eax
-	sub eax,lasttick
-	cmp eax,10
-	jl mainloop
-	mov lasttick,ebx
+
+    INVOKE QueryPerformanceCounter, ADDR perfCount
+
+	mov eax, DWORD PTR perfCount
+    mov edx, DWORD PTR perfCount + 4
+    sub eax, DWORD PTR lastCount
+    sbb edx, DWORD PTR lastCount + 4 
+
+    mov ebx, 100
+    mul ebx
+    div DWORD PTR perfFreq
+
+    cmp eax, 0
+    je mainloop
+
+    mov eax, DWORD PTR perfCount
+    mov edx, DWORD PTR perfCount + 4
+    mov DWORD PTR lastCount, eax
+    mov DWORD PTR lastCount + 4, edx
 
 	inc centisec
 	cmp centisec,100
@@ -96,11 +124,13 @@ displaytime:
 	mov dh,8
 	mov dl,0
 	call gotoxy
-    call crlf
+
     call crlf
 	mov edx,offset timemsg
 	call writestring
+
 	call displaycurrenttime
+
     jmp mainloop
 
 recordlap:
@@ -130,10 +160,11 @@ recordlap:
     mov edx, OFFSET lapRecordedMsg
     call WriteString
 
-    ; Delay for 2 seconds
-    mov ecx, 10     ; 200 * 10ms = 2 seconds
+    ; Delay for 0.1 seconds
+    mov ecx, 1     ; 10 * 10ms = 0.1 seconds
+
 delayloop:
-    mov eax, 10       ; Delay for 10ms
+    mov eax, 50       ; Delay for 50ms
     call Delay
     loop delayloop
 
@@ -210,82 +241,82 @@ displaylaps PROC
 
     mov ecx,0
     displaylaploop:
-    cmp ecx,currentlap
-    jge enddisplaylaps
+        cmp ecx,currentlap
+        jge enddisplaylaps
 
-    mov edx,offset lapmsg
-    call writestring
-    mov eax,ecx
-    inc eax
-    call writedec
-    mov al,':'
-    call writechar
-    mov al,' '
-    call writechar
-
-    push ecx
-    mov ebx,ecx
-    mov eax,laphours[ebx*4]
-    call writedec
-    mov edx,offset colonstr
-    call writestring
-
-    mov eax,lapminutes[ebx*4]
-    .if eax < 10
-        mov al,'0'
+        mov edx,offset lapmsg
+        call writestring
+        mov eax,ecx
+        inc eax
+        call writedec
+        mov al,':'
         call writechar
-    .endif
+        mov al,' '
+        call writechar
+
+        push ecx
+        mov ebx,ecx
+        mov eax,laphours[ebx*4]
+        call writedec
+        mov edx,offset colonstr
+        call writestring
+
         mov eax,lapminutes[ebx*4]
-        call writedec
-        mov edx,offset colonstr
-        call writestring
+        .if eax < 10
+            mov al,'0'
+            call writechar
+        .endif
+            mov eax,lapminutes[ebx*4]
+            call writedec
+            mov edx,offset colonstr
+            call writestring
 
-    mov eax,lapseconds[ebx*4]
-    .if eax<10
-        mov al,'0'
-        call writechar
-    .endif
         mov eax,lapseconds[ebx*4]
-        call writedec
-        mov edx,offset colonstr
-        call writestring
+        .if eax<10
+            mov al,'0'
+            call writechar
+        .endif
+            mov eax,lapseconds[ebx*4]
+            call writedec
+            mov edx,offset colonstr
+            call writestring
 
-    mov eax,lapcenti[ebx*4]
-    .if eax<10
-        mov al,'0'
-        call writechar
-    .endif
         mov eax,lapcenti[ebx*4]
-        call writedec
+        .if eax<10
+            mov al,'0'
+            call writechar
+        .endif
+            mov eax,lapcenti[ebx*4]
+            call writedec
 
-    call crlf
-    pop ecx
-    inc ecx
+        call crlf
+        pop ecx
+        inc ecx
     jmp displaylaploop
 
     nolaps:
-    mov  edx,offset nolapsmsg
-    call writestring
-    call crlf
+        mov  edx,offset nolapsmsg
+        call writestring
+        call crlf
 
     enddisplaylaps:
-    mov edx,offset presskeymsg
-    call writestring
-    call Readchar
+        mov edx,offset presskeymsg
+        call writestring
+        call Readchar
 
-    call clrscr
-    mov edx,offset titlemsg
-    call writestring
-    mov edx,offset menumsg
-    call writestring
-    call crlf
+        call clrscr
+        mov edx,offset titlemsg
+        call writestring
+        mov edx,offset menumsg
+        call writestring
+        call crlf
     ret
 
     nolapsmsg byte "no laps recorded yet",0
 displaylaps endp
 
 exitprog:
-exit
+    exit
 
 main endp
 end main
