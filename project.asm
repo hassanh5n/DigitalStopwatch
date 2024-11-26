@@ -34,7 +34,7 @@ QueryPerformanceFrequency PROTO,
 			BYTE "[S] Start/Stop", 0dh, 0ah
 			BYTE "[R] Reset", 0dh, 0ah
 			BYTE "[L] Lap Record (Max 10)", 0dh, 0ah
-			BYTE "[V] View LAps", 0dh, 0ah
+			BYTE "[V] View Laps", 0dh, 0ah
 			BYTE "[Q] Quit", 0dh, 0ah, 0
 
 	timeMsg BYTE "Time:      ", 0
@@ -46,7 +46,13 @@ QueryPerformanceFrequency PROTO,
 
 	colonStr BYTE ":", 0
 	pressKeyMsg BYTE "Press any key to return...", 0
+
+    pauseMsg     BYTE "Paused - Press 'S' to resume", 0dh, 0ah, 0
+    pauseclearSTR BYTE "                            ", 0dh, 0ah, 0
+
 	isrunning byte 0
+
+    
 
 .code
 main proc
@@ -66,8 +72,9 @@ main proc
 
 mainloop:
 
-	call readKey
-	jz checktimer ;if no key pressed 
+	call readKey 
+    cmp al, 0
+    je mainloop
 
 	cmp al,'s'
 	je toggletimer
@@ -79,6 +86,8 @@ mainloop:
 	je viewlaps
 	cmp al,'q'
 	je exitprog
+
+    jmp checktimer ;if no key pressed
 
 checktimer:
     cmp isrunning,0
@@ -161,10 +170,10 @@ recordlap:
     call WriteString
 
     ; Delay for 0.1 seconds
-    mov ecx, 1     ; 10 * 10ms = 0.1 seconds
+    mov ecx, 10     ; 5 * 10ms = 0.05 seconds
 
 delayloop:
-    mov eax, 50       ; Delay for 50ms
+    mov eax, 10       ; Delay for 50ms
     call Delay
     loop delayloop
 
@@ -183,7 +192,26 @@ viewlaps:
 
 toggletimer:
     xor isRunning, 1    ; Toggle running state
-    jmp mainLoop
+    cmp isRunning, 0
+    je showPauseMsg
+    jmp clearPauseMsg
+
+showPauseMsg:
+    mov dh, 12
+    mov dl, 20
+    call Gotoxy
+    mov edx, OFFSET pauseMsg
+    call Writestring
+    jmp mainloop
+
+clearPauseMsg:
+    mov dh, 12
+    mov dl, 20
+    call Gotoxy
+    mov edx, OFFSET pauseclearSTR
+    call Writestring
+    call displaytime
+    jmp mainloop
 
 resettimer:
     mov hours, 0
